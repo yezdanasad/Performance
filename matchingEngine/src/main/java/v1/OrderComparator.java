@@ -1,7 +1,9 @@
 package v1;
 
 import java.util.Comparator;
-import v1.Order.OrderType;
+import matchingEngineUtils.Order.OrderType;
+import matchingEngineUtils.Order.OrderType;
+import matchingEngineUtils.Order;
 
 public class OrderComparator implements Comparator<Order> {
     private final OrderType type;

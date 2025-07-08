@@ -1,12 +1,13 @@
 package v1;
 
 import java.util.PriorityQueue;
-import v1.Order.OrderType;
+import matchingEngineUtils.Order.OrderType;
+import matchingEngineUtils.Order;
 
 public class OrderBook {
 
     private final PriorityQueue<Order> buyOrders = new PriorityQueue<>(
-            new OrderComparator(OrderType.BUY)
+            new OrderComparator(Order.OrderType.BUY)
     );
     private final PriorityQueue<Order> sellOrders = new PriorityQueue<>(
             new OrderComparator(OrderType.SELL)
