@@ -91,4 +91,11 @@ public class Order {
         );
     }
 
+    public static record Match(UUID buyOrderId,
+                               UUID sellOrderId,
+                               int quantity,
+                               double price,
+                               Long timeOfMatch) {
+
+    }
 }
