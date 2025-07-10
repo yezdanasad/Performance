@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public  class Main {
@@ -38,14 +39,12 @@ public  class Main {
                 }
             });
 
-            Thread.sleep(1000);
-
             executor.submit(() -> {
 
-                AtomicLong numMatches = new AtomicLong(0L);
+                AtomicInteger numMatches = new AtomicInteger(0);
 
                 try (ExcerptTailer tailer = queue.createTailer()) {
-                    long durationNanos = 10_000_000_000L;
+                    long durationNanos = 60_000_000_000L;
                     long start = System.nanoTime();
 
                     while (System.nanoTime() - start <= durationNanos) {
@@ -57,13 +56,12 @@ public  class Main {
                         });
                     }
                 }
-
-                System.out.println("Speed : " + (numMatches.get() / 10L) + " orders /s");
+                System.out.println("Speed : " + (numMatches.get() / 60) + " orders /s");
 
             });
 
             executor.shutdown();
-            executor.awaitTermination(15, TimeUnit.SECONDS);
+            executor.awaitTermination(65, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
