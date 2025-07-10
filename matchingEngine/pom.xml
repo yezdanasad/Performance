@@ -23,6 +23,11 @@
             <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-queue</artifactId>
+            <version>5.27ea5</version>
+        </dependency>
     </dependencies>
 
     <build>

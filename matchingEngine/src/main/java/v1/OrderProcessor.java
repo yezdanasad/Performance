@@ -16,11 +16,11 @@ public  class OrderProcessor {
     public OrderProcessor (OrderBook orderBook){
         this.buyOrders = orderBook.getBuyOrders();
         this.sellOrders = orderBook.getSellOrders();
-        matchesFound = new ArrayList<Order.Match>();
+
     }
 
     public List<Order.Match> match() {
-
+        matchesFound = new ArrayList<Order.Match>();
         while (matchPossible()) {
             processMatches(buyOrders.peek(), sellOrders.peek());
         }
@@ -52,6 +52,14 @@ public  class OrderProcessor {
                         !sellOrders.isEmpty() &&
                         buyOrders.peek().getPrice() >= sellOrders.peek().getPrice()
         );
+    }
+
+    public void addOrder (Order order){
+        if (order.getType() == Order.OrderType.BUY) {
+            buyOrders.offer(order);
+        } else {
+            sellOrders.offer(order);
+        }
     }
 
 

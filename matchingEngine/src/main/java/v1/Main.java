@@ -1,28 +1,74 @@
 package v1;
 
 import matchingEngineUtils.*;
+import net.openhft.chronicle.queue.ExcerptAppender;
+import net.openhft.chronicle.queue.ExcerptTailer;
+import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
+import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
+
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public  class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+
 
         OrderGenerator generator = new OrderGenerator();
-        Long totalTime = 0L;
-        int totalOrders = 0;
-        for ( int i = 0 ; i < 25; i++){
-            OrderBook book = prepareIteration(generator);
-            Long start = System.nanoTime();
-            List<Order.Match> results = runIteration(book);
-            Long end = System.nanoTime();
-            System.out.println(results.size() + " orders matched in " + (end - start)/1000000.0 + " ms.");
-            totalTime += (end-start);
-            totalOrders += results.size();
+        AtomicBoolean running = new AtomicBoolean(true);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        OrderProcessor processor = new OrderProcessor(new OrderBook());
+
+        try(SingleChronicleQueue queue = SingleChronicleQueueBuilder.builder().path("test-queue").build();){
+
+            executor.submit(() -> {
+                try (ExcerptAppender appender = queue.createAppender();
+                ){
+                    System.out.println("Enqueing orders...");
+                    while(true){
+                        Order order = generator.generateRandomOrder();
+                        appender.writeDocument(w -> w.write("order").object(order));
+                    }
+                }
+            });
+
+            Thread.sleep(1000);
+
+            executor.submit(() -> {
+
+                AtomicLong numMatches = new AtomicLong(0L);
+
+                try (ExcerptTailer tailer = queue.createTailer()) {
+                    long durationNanos = 10_000_000_000L;
+                    long start = System.nanoTime();
+
+                    while (System.nanoTime() - start <= durationNanos) {
+                        tailer.readDocument(wire -> {
+                            Order order = wire.read("order").object(Order.class);
+                            processor.addOrder(order);
+                            List<Order.Match> results = processor.match();
+                            numMatches.addAndGet(results.size());
+                        });
+                    }
+                }
+
+                System.out.println("Speed : " + (numMatches.get() / 10L) + " orders /s");
+
+            });
+
+            executor.shutdown();
+            executor.awaitTermination(15, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        Double Time = totalTime/1000000000.0;
-        Double speed = totalOrders/Time;
-        System.out.println("-------------------- Results -----------------------");
-        System.out.println("Processed a total of " + totalOrders + " orders in " + Time + "  s.");
-        System.out.println("Speed : " + speed + " orders/s." );
+
+
     }
 
     private static List<Order.Match> runIteration(OrderBook orderBook){
